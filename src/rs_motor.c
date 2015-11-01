@@ -63,12 +63,12 @@ uint16_t flg = 0;
 static mrb_value
 mrb_rs_motor_pwm_SetMode (mrb_state *mrb, mrb_value self)
 {	//int mode
-	  mrb_int n;
-	  mrb_value mode;
+	  mrb_int mode;
+	  mrb_value mode_val;
 
-	  mrb_get_args(mrb, "i", &n);
-	  mode = mrb_fixnum_value(n);
-	  mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwm_mode"), mode);
+	  mrb_get_args(mrb, "i", &mode);
+	  mode_val = mrb_fixnum_value(mode);
+	  mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwm_mode"), mode_val);
 
 	  if (mode == PWM_MODE_MS){
 		*(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE | PWM0_MS_MODE | PWM1_MS_MODE ;
@@ -129,10 +129,10 @@ mrb_rs_motor_initialize(mrb_state *mrb, mrb_value self)
 	enable = mrb_fixnum_value(n);
 	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@enable"), enable);
 	pwmNo = mrb_fixnum_value(npwm);
-	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwmNo"), pwmNo);
+	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwm_no"), pwmNo);
 
 	//とりえあずPWM0=GPIO12, PWM1=GPIO19のみサポート
-	switch(enable){
+	switch (n) {
 		case 12:
 			SET_GPIO_ALT(12, 0);	//PWM0
 			//5
@@ -181,7 +181,7 @@ mrb_rs_motor_stop(mrb_state *mrb, mrb_value self)
 
 	int motor;
 	mrb_value v;
-	v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwmNo"));
+	v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwm_no"));
 	motor = mrb_fixnum(v);
 
 	if(motor == L_MOTOR){
@@ -200,20 +200,20 @@ mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
 	int motor;
 	mrb_value v;
 
-	mrb_int n1, n2;
-	mrb_value speed, rotation;
-	int hval,lval,val;
-	unsigned int high,low;
-
-	mrb_get_args(mrb, "ii", &n1, &n2);
-	rotation = mrb_fixnum_value(n1);
-	speed = mrb_fixnum_value(n2);
-
-
-	v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwmNo"));
-	motor = mrb_fixnum(v);
+	//mrb_int n1, n2;
+	mrb_int speed, rotation;
+	//int hval,lval,val;
+	//unsigned int high,low;
 
 	int param = 50;
+
+	mrb_get_args(mrb, "ii", &rotation, &speed);
+	//rotation = mrb_fixnum_value(n1);
+	//speed = mrb_fixnum_value(n2);
+
+	v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwm_no"));
+	motor = mrb_fixnum(v);
+
 	if(motor == L_MOTOR){
 		if(rotation == FOWARD){
 			PUT32(GPSET0,1<<16);
@@ -248,11 +248,11 @@ mrb_mruby_rs_motor_gem_init(mrb_state* mrb) {
 
 
 	/* methods */
-	mrb_define_method(mrb, motor, "initialize", mrb_rs_motor_initialize, ARGS_REQ(4));
-	mrb_define_method(mrb, motor, "stop", mrb_rs_motor_stop, ARGS_REQ(1));
-	mrb_define_method(mrb, motor, "drive", mrb_rs_motor_drive, ARGS_REQ(3));
-	mrb_define_method(mrb, motor, "setClock", mrb_rs_motor_pwm_SetClock, ARGS_REQ(1));
-	mrb_define_method(mrb, motor, "pwmMode", mrb_rs_motor_pwm_SetMode, ARGS_REQ(1));
+	mrb_define_method(mrb, motor, "initialize", mrb_rs_motor_initialize, MRB_ARGS_REQ(4));
+	mrb_define_method(mrb, motor, "stop", mrb_rs_motor_stop, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, motor, "drive", mrb_rs_motor_drive, MRB_ARGS_REQ(3));
+	mrb_define_method(mrb, motor, "setClock", mrb_rs_motor_pwm_SetClock, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, motor, "pwmMode", mrb_rs_motor_pwm_SetMode, MRB_ARGS_REQ(1));
 
 
 }

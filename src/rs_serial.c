@@ -1,5 +1,6 @@
-
 #include "rs_robot.h"
+#include "mruby/string.h"
+#include <string.h>
 
 #define AUX_MU_IO_REG   0x20215040	//Mini Uart I/O Data
 #define AUX_MU_IER_REG  0x20215044	//Mini Uart Interrupt Enable
@@ -12,6 +13,18 @@
 #define AUX_MU_CNTL_REG 0x20215060	//Mini Uart Extra Control
 #define AUX_MU_STAT_REG 0x20215064	//Mini Uart Extra Status
 #define AUX_MU_BAUD_REG 0x20215068	//Mini Uart Baudrate
+
+/**
+ * from https://github.com/dwelch67/raspberrypi.git
+ */
+void uart_putc ( unsigned int c )
+{
+    while(1)
+    {
+        if(GET32(AUX_MU_LSR_REG)&0x20) break;
+    }
+    PUT32(AUX_MU_IO_REG,c);
+}
 
 static mrb_value
 mrb_rs_serial_initialize(mrb_state *mrb, mrb_value self)
@@ -50,15 +63,13 @@ mrb_rs_serial_initialize(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_rs_serial_puts(mrb_state *mrb, mrb_value self)
 {
-	mrb_value s;
 	char *data;
 	int data_len;
 
-	mrb_get_args(mrb, "S", &s);
-	data = mrb_str_to_cstr(mrb, s);
-	data_len = strlen(data);
-
     int idx = 0;
+
+	mrb_get_args(mrb, "s", &data, &data_len);
+
     for(idx = 0; idx < data_len ; idx++){
     	uart_putc(data[idx]);
     }
@@ -75,8 +86,8 @@ mrb_mruby_rs_serial_gem_init(mrb_state* mrb) {
 	serial = mrb_define_class(mrb, "Serial", mrb->object_class);
 
 	/* methods */
-	mrb_define_method(mrb, serial, "initialize", mrb_rs_serial_initialize, ARGS_REQ(1));
-	mrb_define_method(mrb, serial, "write", mrb_rs_serial_puts, ARGS_REQ(1));
+	mrb_define_method(mrb, serial, "initialize", mrb_rs_serial_initialize, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, serial, "write", mrb_rs_serial_puts, MRB_ARGS_REQ(1));
 
 }
 
