@@ -56,7 +56,7 @@ volatile unsigned int *SPI_CLK     =  (unsigned int *) AUX_SPI0_CLK;
 unsigned int ra;
 uint16_t flg = 0;
 
-unsigned int spi_read(unsigned int cmd){
+unsigned int spi_read(unsigned int cmd) {
 	unsigned int iret;
 
     *SPI_CONTROL |= SPI_CS_TA_ACTIVE;
@@ -103,6 +103,7 @@ mrb_rs_gyro_initialize(mrb_state *mrb, mrb_value self)
 
     unsigned int ra;
     unsigned int ra2;
+	unsigned int rcv_data = 0;
 
     ra=GET32(AUX_ENABLES);
     ra|=2; //enable spi0
@@ -134,8 +135,7 @@ mrb_rs_gyro_initialize(mrb_state *mrb, mrb_value self)
 
     *SPI_CLK = 128;
     //Who am I(0x0F) を呼んでみる
-	unsigned int rcv_data = 0;
-   rcv_data = spi_read(0x0F);
+    rcv_data = spi_read(0x0F);
 
    //0xD4が帰ってきたらOK(15が返ってくる。。。)
     if(rcv_data != 0xd4){
@@ -158,33 +158,32 @@ mrb_rs_gyro_initialize(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_rs_gyro_read(mrb_state *mrb, mrb_value self)
 {
-	//引数でx,y,zをもらう。該当するデータを取得して返す
-	  mrb_int n;
-	  mrb_value axis;
-	  int hval,lval,val;
-	  unsigned int high,low;
+    //引数でx,y,zをもらう。該当するデータを取得して返す
+    mrb_int axis;
+    int hval,lval,val;
+    unsigned int high,low;
+    mrb_int ret;
 
-	  mrb_get_args(mrb, "i", &n);
-	  axis = mrb_fixnum_value(n);
-	  switch(n){
-	  case 0:	//x
-		  break;
-	  case 1:	//y
-		  high = 0x2B;
-		  low = 0x2A;
-		  break;
-	  case 2:	//z
-		  break;
-	  }
+    mrb_get_args(mrb, "i", &axis);
+    switch (axis) {
+    case 0:	//x
+        break;
+    case 1:	//y
+        high = 0x2B;
+        low = 0x2A;
+        break;
+    case 2:	//z
+        break;
+    }
 
   	hval = spi_read(high);
   	// Y下位受信
   	lval = spi_read(low);
-      val = hval << 8 | lval;
-      if (val>0x8000) {
+    val = hval << 8 | lval;
+    if (val>0x8000) {
       	val-=0x10000;
-      }
-  	mrb_int ret = -1 * val;
+    }
+    ret = -1 * val;
 
   	return mrb_fixnum_value(ret);
 }
@@ -195,13 +194,13 @@ mrb_mruby_rs_gyro_gem_init(mrb_state* mrb) {
 	struct RClass *gyro;
 	gyro = mrb_define_class(mrb, "Gyro", mrb->object_class);
 
-	mrb_define_const(mrb,gyro, "X", mrb_fixnum_value(0));
-	mrb_define_const(mrb,gyro, "Y", mrb_fixnum_value(1));
-	mrb_define_const(mrb,gyro, "Z", mrb_fixnum_value(2));
+	mrb_define_const(mrb, gyro, "X", mrb_fixnum_value(0));
+	mrb_define_const(mrb, gyro, "Y", mrb_fixnum_value(1));
+	mrb_define_const(mrb, gyro, "Z", mrb_fixnum_value(2));
 
 	/* methods */
-	mrb_define_method(mrb, gyro, "initialize", mrb_rs_gyro_initialize, ARGS_REQ(1));
-	mrb_define_method(mrb, gyro, "read", mrb_rs_gyro_read, ARGS_REQ(1));
+	mrb_define_method(mrb, gyro, "initialize", mrb_rs_gyro_initialize, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, gyro, "read", mrb_rs_gyro_read, MRB_ARGS_REQ(1));
 
 }
 
