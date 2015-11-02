@@ -53,7 +53,7 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 #define L_MOTOR 0
 #define R_MOTOR 1
 
-#define FOWARD 0
+#define FORWARD 0
 #define REVERSE 1
 
 
@@ -213,7 +213,7 @@ mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
 	motor = mrb_fixnum(v);
 
 	if(motor == L_MOTOR){
-		if(rotation == FOWARD){
+		if(rotation == FORWARD){
 			PUT32(GPSET0,1<<16);
 			PUT32(GPCLR0,1<<20);
 		}else{
@@ -222,7 +222,7 @@ mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
 		}
 		*(pwm + PWM_DAT1) = speed + param;	//DAT1
 	}else{
-		if(rotation == FOWARD){
+		if(rotation == FORWARD){
 			PUT32(GPSET0,1<<5);
 			PUT32(GPCLR0,1<<6);
 		}else{
@@ -241,7 +241,7 @@ mrb_mruby_rs_motor_gem_init(mrb_state* mrb) {
 
 	mrb_define_const(mrb, motor, "MS", mrb_fixnum_value(0));
 	mrb_define_const(mrb, motor, "BAL", mrb_fixnum_value(1));
-	mrb_define_const(mrb, motor, "FOWARD", mrb_fixnum_value(0));
+	mrb_define_const(mrb, motor, "FORWARD", mrb_fixnum_value(0));
 	mrb_define_const(mrb, motor, "REVERSE", mrb_fixnum_value(1));
 
 
