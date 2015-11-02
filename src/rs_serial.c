@@ -17,7 +17,8 @@
 /**
  * from https://github.com/dwelch67/raspberrypi.git
  */
-void uart_putc ( unsigned int c )
+static void
+uart_putc(unsigned int c)
 {
     while(1)
     {
@@ -29,7 +30,7 @@ void uart_putc ( unsigned int c )
 static mrb_value
 mrb_rs_serial_initialize(mrb_state *mrb, mrb_value self)
 {
-	// port 14,15を使用する
+	// use port 14,15
     unsigned int ra;
 
     PUT32(AUX_ENABLES,1);
@@ -65,7 +66,6 @@ mrb_rs_serial_puts(mrb_state *mrb, mrb_value self)
 {
 	char *data;
 	int data_len;
-
     int idx = 0;
 
 	mrb_get_args(mrb, "s", &data, &data_len);
@@ -79,6 +79,21 @@ mrb_rs_serial_puts(mrb_state *mrb, mrb_value self)
 	return self;
 }
 
+static mrb_value
+mrb_rs_serial_write(mrb_state *mrb, mrb_value self)
+{
+	char *data;
+	int data_len;
+    int idx = 0;
+
+	mrb_get_args(mrb, "s", &data, &data_len);
+
+    for(idx = 0; idx < data_len ; idx++){
+    	uart_putc(data[idx]);
+    }
+	return self;
+}
+
 
 void
 mrb_mruby_rs_serial_gem_init(mrb_state* mrb) {
@@ -86,8 +101,9 @@ mrb_mruby_rs_serial_gem_init(mrb_state* mrb) {
 	serial = mrb_define_class(mrb, "Serial", mrb->object_class);
 
 	/* methods */
-	mrb_define_method(mrb, serial, "initialize", mrb_rs_serial_initialize, MRB_ARGS_REQ(1));
-	mrb_define_method(mrb, serial, "write", mrb_rs_serial_puts, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, serial, "initialize", mrb_rs_serial_initialize, MRB_ARGS_NONE());
+	mrb_define_method(mrb, serial, "write", mrb_rs_serial_write, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, serial, "puts", mrb_rs_serial_puts, MRB_ARGS_REQ(1));
 
 }
 
