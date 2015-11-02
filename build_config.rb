@@ -42,7 +42,7 @@ MRuby::CrossBuild.new('rs') do |conf|
   # Use Robot class
   conf.gem '../mruby_rs_robot'
 
-  CFLAGS = "-Wall -nostartfiles -ffreestanding -g -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -mhard-float -ggdb -g -O2"
+  CFLAGS = "-Wall -nostartfiles -ffreestanding -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -mfloat-abi=soft -ggdb -g -O2"
 
   conf.cc do |cc|
     cc.command = CC_PATH
