@@ -44,28 +44,37 @@ mrb_rs_system_timer_initialize(mrb_state *mrb, mrb_value self)
     return self;
 }
 
+
 static mrb_value
 mrb_rs_system_timer_now(mrb_state *mrb, mrb_value self)
 {
-	  unsigned int chi;
-	  unsigned int clo;
+    unsigned int chi;
+    unsigned int clo;
 
-	  // カウンタの値を取得
-	  chi = *(volatile unsigned int *)SYST_CHI;
-	  clo = *(volatile unsigned int *)SYST_CLO;
+    // get counter's value
+    chi = *(volatile unsigned int *)SYST_CHI;
+    clo = *(volatile unsigned int *)SYST_CLO;
 
-	  // 桁上りチェック
-	  if (chi != *(volatile unsigned int *)SYST_CHI) {
-	    // 桁上りが起こっているならCHIとCLOを更新する
+    // carry check
+    if (chi != *(volatile unsigned int *)SYST_CHI) {
+	    // update CHI and CLO
 	    chi = *(volatile unsigned int *) SYST_CHI;
 	    clo = *(volatile unsigned int *) SYST_CLO;
-	  }
-	  // 64bitにして返す
-//	  return (chi << 32) + clo;
-	  //とりあえず32bit
-	  	return mrb_fixnum_value(clo);
+    }
+    // return as 64bit value
+    // return (chi << 32) + clo;
+    // now we use only 32bit
+    return mrb_fixnum_value(clo);
 }
 
+static mrb_value
+mrb_rs_system_timer_reset(mrb_state *mrb, mrb_value self)
+{
+    // reset counter
+    *(volatile unsigned int *)SYST_CLO = 0;
+    *(volatile unsigned int *)SYST_CHI = 0;
+    return mrb_fixnum_value(0);
+}
 
 void
 mrb_mruby_rs_system_timer_gem_init(mrb_state* mrb) {
@@ -73,9 +82,9 @@ mrb_mruby_rs_system_timer_gem_init(mrb_state* mrb) {
 	timer = mrb_define_class(mrb, "SystemTimer", mrb->object_class);
 
 	/* methods */
-	mrb_define_method(mrb, timer, "initialize", mrb_rs_system_timer_initialize, ARGS_REQ(1));
-	mrb_define_method(mrb, timer, "now", mrb_rs_system_timer_now, ARGS_REQ(1));
-
+	mrb_define_method(mrb, timer, "initialize", mrb_rs_system_timer_initialize, MRB_ARGS_NONE());
+	mrb_define_method(mrb, timer, "now", mrb_rs_system_timer_now, MRB_ARGS_NONE());
+	mrb_define_method(mrb, timer, "reset", mrb_rs_system_timer_reset, MRB_ARGS_NONE());
 }
 
 void
