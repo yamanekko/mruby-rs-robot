@@ -57,9 +57,6 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 #define REVERSE 1
 
 
-unsigned int ra;
-uint16_t flg = 0;
-
 static mrb_value
 mrb_rs_motor_pwm_SetMode (mrb_state *mrb, mrb_value self)
 {	//int mode
@@ -119,6 +116,7 @@ mrb_rs_motor_initialize(mrb_state *mrb, mrb_value self)
 	//gpioピン番号とPWM1と2のどちらを使うかをもらう
 	mrb_int n1,n2,n,npwm;
 	mrb_value input1, input2, enable,pwmNo;
+    unsigned int ra;
 	unsigned int ra2;
 
 	mrb_get_args(mrb, "iiii", &n1, &n2, &n, &npwm);
