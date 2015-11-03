@@ -14,6 +14,14 @@
 #define SYST_CLO 0x20003004
 #define SYST_CHI 0x20003008
 
+static void
+timer_reset(void)
+{
+	// reset counter
+	*(volatile unsigned int *)SYST_CLO = 0;
+	*(volatile unsigned int *)SYST_CHI = 0;
+}
+
 
 static mrb_value
 mrb_rs_system_timer_initialize(mrb_state *mrb, mrb_value self)
@@ -70,10 +78,8 @@ mrb_rs_system_timer_now(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_rs_system_timer_reset(mrb_state *mrb, mrb_value self)
 {
-    // reset counter
-    *(volatile unsigned int *)SYST_CLO = 0;
-    *(volatile unsigned int *)SYST_CHI = 0;
-    return mrb_fixnum_value(0);
+	timer_reset();
+	return mrb_fixnum_value(0);
 }
 
 void

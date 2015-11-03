@@ -255,7 +255,7 @@ mrb_mruby_rs_motor_gem_init(mrb_state* mrb) {
 	/* methods */
 	mrb_define_method(mrb, motor, "initialize", mrb_rs_motor_initialize, MRB_ARGS_REQ(4));
 	mrb_define_method(mrb, motor, "stop", mrb_rs_motor_stop, MRB_ARGS_REQ(1));
-	mrb_define_method(mrb, motor, "power", mrb_rs_motor_drive, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, motor, "drive", mrb_rs_motor_drive, MRB_ARGS_REQ(1));
 	mrb_define_method(mrb, motor, "clock=", mrb_rs_motor_pwm_SetClock, MRB_ARGS_REQ(1));
 	mrb_define_method(mrb, motor, "pwm_mode=", mrb_rs_motor_pwm_SetMode, MRB_ARGS_REQ(1));
 
