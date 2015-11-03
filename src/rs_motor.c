@@ -53,12 +53,9 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 #define L_MOTOR 0
 #define R_MOTOR 1
 
-#define FOWARD 0
+#define FORWARD 0
 #define REVERSE 1
 
-
-unsigned int ra;
-uint16_t flg = 0;
 
 static mrb_value
 mrb_rs_motor_pwm_SetMode (mrb_state *mrb, mrb_value self)
@@ -119,6 +116,7 @@ mrb_rs_motor_initialize(mrb_state *mrb, mrb_value self)
 	//gpioピン番号とPWM1と2のどちらを使うかをもらう
 	mrb_int n1,n2,n,npwm;
 	mrb_value input1, input2, enable,pwmNo;
+    unsigned int ra;
 	unsigned int ra2;
 
 	mrb_get_args(mrb, "iiii", &n1, &n2, &n, &npwm);
@@ -207,15 +205,22 @@ mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
 
 	int param = 50;
 
-	mrb_get_args(mrb, "ii", &rotation, &speed);
+	mrb_get_args(mrb, "i", &speed);
 	//rotation = mrb_fixnum_value(n1);
 	//speed = mrb_fixnum_value(n2);
+
+    if (speed > 0) {
+        rotation = FORWARD;
+    } else {
+        rotation = REVERSE;
+        speed = -speed;
+    }
 
 	v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwm_no"));
 	motor = mrb_fixnum(v);
 
 	if(motor == L_MOTOR){
-		if(rotation == FOWARD){
+		if(rotation == FORWARD){
 			PUT32(GPSET0,1<<16);
 			PUT32(GPCLR0,1<<20);
 		}else{
@@ -224,7 +229,7 @@ mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
 		}
 		*(pwm + PWM_DAT1) = speed + param;	//DAT1
 	}else{
-		if(rotation == FOWARD){
+		if(rotation == FORWARD){
 			PUT32(GPSET0,1<<5);
 			PUT32(GPCLR0,1<<6);
 		}else{
@@ -243,17 +248,16 @@ mrb_mruby_rs_motor_gem_init(mrb_state* mrb) {
 
 	mrb_define_const(mrb, motor, "MS", mrb_fixnum_value(0));
 	mrb_define_const(mrb, motor, "BAL", mrb_fixnum_value(1));
-	mrb_define_const(mrb, motor, "FOWARD", mrb_fixnum_value(0));
+	mrb_define_const(mrb, motor, "FORWARD", mrb_fixnum_value(0));
 	mrb_define_const(mrb, motor, "REVERSE", mrb_fixnum_value(1));
 
 
 	/* methods */
 	mrb_define_method(mrb, motor, "initialize", mrb_rs_motor_initialize, MRB_ARGS_REQ(4));
 	mrb_define_method(mrb, motor, "stop", mrb_rs_motor_stop, MRB_ARGS_REQ(1));
-	mrb_define_method(mrb, motor, "drive", mrb_rs_motor_drive, MRB_ARGS_REQ(3));
-	mrb_define_method(mrb, motor, "setClock", mrb_rs_motor_pwm_SetClock, MRB_ARGS_REQ(1));
-	mrb_define_method(mrb, motor, "pwmMode", mrb_rs_motor_pwm_SetMode, MRB_ARGS_REQ(1));
-
+	mrb_define_method(mrb, motor, "power", mrb_rs_motor_drive, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, motor, "clock=", mrb_rs_motor_pwm_SetClock, MRB_ARGS_REQ(1));
+	mrb_define_method(mrb, motor, "pwm_mode=", mrb_rs_motor_pwm_SetMode, MRB_ARGS_REQ(1));
 
 }
 
