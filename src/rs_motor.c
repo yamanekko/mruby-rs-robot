@@ -56,6 +56,19 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 #define FORWARD 0
 #define REVERSE 1
 
+static void
+rs_motor_set_mode(mrb_state *mrb, mrb_int mode)
+{
+    mrb_value mod_val = mrb_fixnum_value(mode);
+    struct RClass *motor = mrb_class_get(mrb, "Motor");
+    mrb_iv_set(mrb, motor, mrb_intern_lit(mrb, "@pwm_mode"), mode_val);
+
+    if (mode == PWM_MODE_MS) {
+		*(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE | PWM0_MS_MODE | PWM1_MS_MODE ;
+    } else {
+		*(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
+    }
+}
 
 static mrb_value
 mrb_rs_motor_pwm_SetMode (mrb_state *mrb, mrb_value self)
@@ -64,32 +77,18 @@ mrb_rs_motor_pwm_SetMode (mrb_state *mrb, mrb_value self)
 	  mrb_value mode_val;
 
 	  mrb_get_args(mrb, "i", &mode);
-	  mode_val = mrb_fixnum_value(mode);
-	  mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwm_mode"), mode_val);
-
-	  if (mode == PWM_MODE_MS){
-		*(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE | PWM0_MS_MODE | PWM1_MS_MODE ;
-	  }else{
-		*(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
-	  }
-
+      rs_motor_set_mode(mrb, mode);
 	  return self;
 }
 
-static mrb_value
-mrb_rs_motor_pwm_SetClock(mrb_state *mrb, mrb_value self)
-{	//int divisor
-    unsigned int ra2;
-	uint32_t pwm_control;
 
-	  mrb_int divisor;
-//	  mrb_value divisor;
+static void
+rs_motor_set_clock(mrb_state *mrb, mrb_int divisor)
+{
+    mrb_value divisor_val = mrb_fixnum_value(divisor);
+    struct RClass *motor = mrb_class_get(mrb, "Motor");
+    mrb_iv_set(mrb, motor, mrb_intern_lit(mrb, "@divisor"), divisor_val);
 
-	  mrb_get_args(mrb, "i", &divisor);	//TODO 引数の値は使用してない
-//	  mode = mrb_fixnum_value(divisor);
-//	  mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwm_mode"), mode);
-
-	  divisor &= 4095;
 	  pwm_control = *(pwm + PWM_CONTROL) ;		// preserve PWM_CONTROL
 	  *(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
 	  *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
@@ -105,8 +104,21 @@ mrb_rs_motor_pwm_SetClock(mrb_state *mrb, mrb_value self)
 //	  *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Start PWM clock
 	  *(clk + PWMCLK_CNTL) = 0x5A000211;	// source=osc and enable clock
 	  *(pwm + PWM_CONTROL) = pwm_control ;		// restore PWM_CONTROL
+}
 
-	  return self;
+static mrb_value
+mrb_rs_motor_pwm_SetClock(mrb_state *mrb, mrb_value self)
+{	//int divisor
+    unsigned int ra2;
+	uint32_t pwm_control;
+
+    mrb_int divisor;
+
+    mrb_get_args(mrb, "i", &divisor);	//TODO 引数の値は使用してない
+    divisor &= 4095;
+    rs_motor_set_clock(mrb, divisor);
+
+    return self;
 }
 
 static mrb_value
@@ -256,9 +268,12 @@ mrb_mruby_rs_motor_gem_init(mrb_state* mrb) {
 	mrb_define_method(mrb, motor, "initialize", mrb_rs_motor_initialize, MRB_ARGS_REQ(4));
 	mrb_define_method(mrb, motor, "stop", mrb_rs_motor_stop, MRB_ARGS_REQ(1));
 	mrb_define_method(mrb, motor, "drive", mrb_rs_motor_drive, MRB_ARGS_REQ(1));
-	mrb_define_method(mrb, motor, "clock=", mrb_rs_motor_pwm_SetClock, MRB_ARGS_REQ(1));
-	mrb_define_method(mrb, motor, "pwm_mode=", mrb_rs_motor_pwm_SetMode, MRB_ARGS_REQ(1));
+	mrb_define_class_method(mrb, motor, "clock=", mrb_rs_motor_pwm_SetClock, MRB_ARGS_REQ(1));
+	mrb_define_class_method(mrb, motor, "pwm_mode=", mrb_rs_motor_pwm_SetMode, MRB_ARGS_REQ(1));
 
+    /* initialize motor */
+    rs_motor_set_mode(mrb, PWM_MODE_MS);
+    rs_motor_set_clock(mrb, 75);
 }
 
 void
