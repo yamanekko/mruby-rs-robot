@@ -61,13 +61,13 @@ MRuby::CrossBuild.new('rs') do |conf|
   # Use Robot class
   conf.gem '../mruby-rs-robot'
 
-  CFLAGS = "-Wall -nostartfiles -ffreestanding -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -mfloat-abi=soft -ggdb -g -O2"
+  CFLAGS = "-Wall -nostartfiles -ffreestanding -mcpu=arm1176jzf-s -mtune=arm1176jzf-s -mfloat-abi=soft -ggdb -g3 -O0"
 
   conf.cc do |cc|
 #    cc.command = CC_PATH
 	cc.command = "#{GNU_TOOL_PREFX}gcc"
 
-    # cc.include_paths << ["#{MRUBY_ROOT}/include/"]
+     cc.include_paths << ["#{MRUBY_ROOT}/include/"]
 
     cc.flags << "#{CFLAGS}"
   end
