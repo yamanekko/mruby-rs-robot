@@ -59,8 +59,8 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 static void
 rs_motor_set_mode(mrb_state *mrb, mrb_int mode)
 {
-    mrb_value mod_val = mrb_fixnum_value(mode);
-    struct RClass *motor = mrb_class_get(mrb, "Motor");
+    mrb_value mode_val = mrb_fixnum_value(mode);
+    mrb_value motor = mrb_obj_value(mrb_class_get(mrb, "Motor"));
     mrb_iv_set(mrb, motor, mrb_intern_lit(mrb, "@pwm_mode"), mode_val);
 
     if (mode == PWM_MODE_MS) {
@@ -74,7 +74,6 @@ static mrb_value
 mrb_rs_motor_pwm_SetMode (mrb_state *mrb, mrb_value self)
 {	//int mode
 	  mrb_int mode;
-	  mrb_value mode_val;
 
 	  mrb_get_args(mrb, "i", &mode);
       rs_motor_set_mode(mrb, mode);
@@ -85,8 +84,11 @@ mrb_rs_motor_pwm_SetMode (mrb_state *mrb, mrb_value self)
 static void
 rs_motor_set_clock(mrb_state *mrb, mrb_int divisor)
 {
-    mrb_value divisor_val = mrb_fixnum_value(divisor);
-    struct RClass *motor = mrb_class_get(mrb, "Motor");
+    unsigned int ra2;
+	uint32_t pwm_control;
+
+	mrb_value divisor_val = mrb_fixnum_value(divisor);
+    mrb_value motor = mrb_obj_value(mrb_class_get(mrb, "Motor"));
     mrb_iv_set(mrb, motor, mrb_intern_lit(mrb, "@divisor"), divisor_val);
 
 	  pwm_control = *(pwm + PWM_CONTROL) ;		// preserve PWM_CONTROL
@@ -109,8 +111,6 @@ rs_motor_set_clock(mrb_state *mrb, mrb_int divisor)
 static mrb_value
 mrb_rs_motor_pwm_SetClock(mrb_state *mrb, mrb_value self)
 {	//int divisor
-    unsigned int ra2;
-	uint32_t pwm_control;
 
     mrb_int divisor;
 
@@ -126,11 +126,17 @@ mrb_rs_motor_initialize(mrb_state *mrb, mrb_value self)
 {
 	// input1,input2 enableのペア(A:in1,in2,enableA B:in3,in4,enableB)
 	//gpioピン番号とPWM1と2のどちらを使うかをもらう
-	mrb_int n1,n2,n,npwm;
-	mrb_value input1, input2, enable,pwmNo;
+//	mrb_int input1, input2, enable,pwmNo;
     unsigned int ra;
 	unsigned int ra2;
 
+//	mrb_get_args(mrb, "iiii", &input1, &input2, &enable, &pwmNo);
+//	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@input1"), mrb_fixnum_value(input1));
+//	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@input2"), mrb_fixnum_value(input2));
+//	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@enable"), mrb_fixnum_value(enable));
+//	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwm_no"), mrb_fixnum_value(pwmNo));
+	volatile mrb_int n1,n2,n,npwm;
+	mrb_value input1, input2, enable,pwmNo;
 	mrb_get_args(mrb, "iiii", &n1, &n2, &n, &npwm);
 	input1 = mrb_fixnum_value(n1);
 	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@input1"), input1);
@@ -142,7 +148,8 @@ mrb_rs_motor_initialize(mrb_state *mrb, mrb_value self)
 	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwm_no"), pwmNo);
 
 	//とりえあずPWM0=GPIO12, PWM1=GPIO19のみサポート
-	switch (n) {
+//	switch (enable) {
+	switch (mrb_fixnum(enable)) {
 		case 12:
 			SET_GPIO_ALT(12, 0);	//PWM0
 			//5
@@ -190,9 +197,7 @@ mrb_rs_motor_stop(mrb_state *mrb, mrb_value self)
 {
 
 	int motor;
-	mrb_value v;
-	v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwm_no"));
-	motor = mrb_fixnum(v);
+	motor = mrb_fixnum(mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwm_no")));
 
 	if(motor == L_MOTOR){
 		PUT32(GPCLR0,1<<16);
@@ -208,7 +213,6 @@ static mrb_value
 mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
 {
 	int motor;
-	mrb_value v;
 
 	//mrb_int n1, n2;
 	mrb_int speed, rotation;
@@ -228,7 +232,7 @@ mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
         speed = -speed;
     }
 
-	v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwm_no"));
+    mrb_value v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwm_no"));
 	motor = mrb_fixnum(v);
 
 	if(motor == L_MOTOR){
