@@ -1,6 +1,4 @@
 
-#include "mruby.h"
-#include "mruby/variable.h"
 #include "rs_robot.h"
 
 #define AUX_SPI0_CS     0x20204000	//SPI Master Control and Status
