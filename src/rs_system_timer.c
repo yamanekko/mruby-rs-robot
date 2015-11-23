@@ -22,7 +22,6 @@ timer_reset(void)
 	*(volatile unsigned int *)SYST_CHI = 0;
 }
 
-
 static mrb_value
 mrb_rs_system_timer_initialize(mrb_state *mrb, mrb_value self)
 {
@@ -40,12 +39,10 @@ mrb_rs_system_timer_initialize(mrb_state *mrb, mrb_value self)
 
 	while(1) if(GET32(ARM_TIMER_MIS)) break;
 	PUT32(ARM_TIMER_CLI,0);
-
     PUT32(IRQ_ENABLE_BASIC,1);	//don't remove
 
     while(1) if(GET32(IRQ_BASIC)&1) break;
 	PUT32(ARM_TIMER_CLI,0);
-
     PUT32(ARM_TIMER_LOD,interval);
     PUT32(ARM_TIMER_RLD,interval);
 
@@ -87,7 +84,7 @@ mrb_mruby_rs_system_timer_gem_init(mrb_state* mrb) {
 	struct RClass *timer;
 	timer = mrb_define_class(mrb, "SystemTimer", mrb->object_class);
 
-	/* methods */
+	// methods
 	mrb_define_method(mrb, timer, "initialize", mrb_rs_system_timer_initialize, MRB_ARGS_NONE());
 	mrb_define_method(mrb, timer, "now", mrb_rs_system_timer_now, MRB_ARGS_NONE());
 	mrb_define_method(mrb, timer, "reset", mrb_rs_system_timer_reset, MRB_ARGS_NONE());

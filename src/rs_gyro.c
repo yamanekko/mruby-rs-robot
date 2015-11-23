@@ -66,9 +66,9 @@ unsigned int spi_read(unsigned int cmd) {
 
    *SPI_FIFO = (cmd | 0x80);
    *SPI_FIFO = 0;
-    // 送信完了待ち
+    // wait for sent
     while(1) if(GET32(AUX_SPI0_CS)&(1<<16)) break;
-    //受信待ち
+    //wait for received
     while(1) if(GET32(AUX_SPI0_CS)&(1<<17)) break;
  //   for(ra2=0;ra2<0x50000;ra2++) dummy(ra2);
 
@@ -78,16 +78,17 @@ unsigned int spi_read(unsigned int cmd) {
     // 通信終了（ TA = 0 ）
     *SPI_CONTROL &= ~SPI_CS_TA_ACTIVE ;
 
-    return iret;	//unsigned intを返したい　//TODO
+    return iret;
 }
 
 void spi_write(unsigned int reg, unsigned int val){
-    *SPI_CONTROL |= SPI_CS_TA_ACTIVE;
+	// TA =1 (start)
+	*SPI_CONTROL |= SPI_CS_TA_ACTIVE;
     *SPI_FIFO = reg;
     *SPI_FIFO = val;
-    // 送信完了待ち
+    // 送信完了待ち wait for send done signal
     while(1) if(GET32(AUX_SPI0_CS)&(1<<16)) break;
-    // 通信終了（ TA = 0 ）
+    // TA = 0 (end)
     *SPI_CONTROL &= ~SPI_CS_TA_ACTIVE ;
 }
 
@@ -97,7 +98,7 @@ static mrb_value
 mrb_rs_gyro_initialize(mrb_state *mrb, mrb_value self)
 {
 	//TODO パラメータでデフォルト値を変更できるようにする
-	// gpio 7, 8, 9, 10, 11 を使用
+	// gpio 7, 8, 9, 10, 11
 
     unsigned int ra;
     unsigned int ra2;
@@ -132,56 +133,56 @@ mrb_rs_gyro_initialize(mrb_state *mrb, mrb_value self)
 	*SPI_CONTROL |= SPI_CS_MODE_00;
 
     *SPI_CLK = 128;
-    //Who am I(0x0F) を呼んでみる
+    // read "Who am I" reg(0x0F) for test
     rcv_data = spi_read(0x0F);
 
-   //0xD4が帰ってきたらOK(15が返ってくる。。。)
+   // 0xD4 is collect
     if(rcv_data != 0xd4){
     	return mrb_false_value();
     }
 
-    //    delay (500);
+    // delay 500msec
     for(ra2=0;ra2<0x500000;ra2++) dummy(ra2);
 
     spi_write(0x20, 0xCF);
     spi_write(0x23, (0x01000000));
 
-    //    delay (500);
+    // delay 500msec
     for(ra2=0;ra2<0x500000;ra2++) dummy(ra2);
 
-	  return self;
-
+	return self;
 }
 
 static mrb_value
 mrb_rs_gyro_read(mrb_state *mrb, mrb_value self)
 {
-    //引数でx,y,zをもらう。該当するデータを取得して返す
+    //read x or y or z axis value
     mrb_int axis;
     int hval,lval,val;
     unsigned int high,low;
     mrb_int ret;
+    int offset = 23;
 
     mrb_get_args(mrb, "i", &axis);
     switch (axis) {
-    case 0:	//x
+    case 0:	//x		//TODO
         break;
     case 1:	//y
         high = 0x2B;
         low = 0x2A;
         break;
-    case 2:	//z
+    case 2:	//z		//TODO
         break;
     }
 
   	hval = spi_read(high);
-  	// Y下位受信
   	lval = spi_read(low);
     val = hval << 8 | lval;
     if (val>0x8000) {
       	val-=0x10000;
     }
     ret = -1 * val;
+    ret = ret - offset;
 
   	return mrb_fixnum_value(ret);
 }
@@ -196,7 +197,7 @@ mrb_mruby_rs_gyro_gem_init(mrb_state* mrb) {
 	mrb_define_const(mrb, gyro, "Y", mrb_fixnum_value(1));
 	mrb_define_const(mrb, gyro, "Z", mrb_fixnum_value(2));
 
-	/* methods */
+	// methods
 	mrb_define_method(mrb, gyro, "initialize", mrb_rs_gyro_initialize, MRB_ARGS_REQ(1));
 	mrb_define_method(mrb, gyro, "read", mrb_rs_gyro_read, MRB_ARGS_REQ(1));
 

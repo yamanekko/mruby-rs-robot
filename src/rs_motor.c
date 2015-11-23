@@ -14,7 +14,7 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 #define	PWM_DAT2 9
 
 #define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
-// from wiriling pi
+// same wiriling pi
 #define	PWMCLK_CNTL 40
 #define	PWMCLK_DIV  41	// stop clock and waiting for busy flag doesn't work, so kill clock
 
@@ -31,7 +31,7 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 #define	PWM0_MS_MODE    0x0080  // Run in MS mode
 #define	PWM0_USEFIFO    0x0020  // Data from FIFO
 #define	PWM0_REVPOLAR   0x0010  // Reverse polarity
-#define	PWM0_OFFSTATE   0x0008  // Ouput Off state
+#define	PWM0_OFFSTATE   0x0008  // Output Off state
 #define	PWM0_REPEATFF   0x0004  // Repeat last value if FIFO empty
 #define	PWM0_SERIAL     0x0002  // Run in serial mode
 #define	PWM0_ENABLE     0x0001  // Channel Enable
@@ -39,7 +39,7 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 #define	PWM1_MS_MODE    0x8000  // Run in MS mode
 #define	PWM1_USEFIFO    0x2000  // Data from FIFO
 #define	PWM1_REVPOLAR   0x1000  // Reverse polarity
-#define	PWM1_OFFSTATE   0x0800  // Ouput Off state
+#define	PWM1_OFFSTATE   0x0800  // Output Off state
 #define	PWM1_REPEATFF   0x0400  // Repeat last value if FIFO empty
 #define	PWM1_SERIAL     0x0200  // Run in serial mode
 #define	PWM1_ENABLE     0x0100  // Channel Enable
@@ -48,7 +48,7 @@ volatile unsigned int *gpio = (volatile unsigned int*)0x20200000;
 
 // from wirilng.h
 #define	PWM_MODE_MS		0
-#define	PWM_MODE_BAL		1
+#define	PWM_MODE_BAL	1
 
 #define L_MOTOR 0
 #define R_MOTOR 1
@@ -77,7 +77,8 @@ mrb_rs_motor_pwm_SetMode (mrb_state *mrb, mrb_value self)
 
 	  mrb_get_args(mrb, "i", &mode);
       rs_motor_set_mode(mrb, mode);
-	  return self;
+
+      return self;
 }
 
 
@@ -89,23 +90,20 @@ rs_motor_set_clock(mrb_state *mrb, mrb_int divisor)
 
 	mrb_value divisor_val = mrb_fixnum_value(divisor);
     mrb_value motor = mrb_obj_value(mrb_class_get(mrb, "Motor"));
-    mrb_iv_set(mrb, motor, mrb_intern_lit(mrb, "@divisor"), divisor_val);
+	mrb_iv_set(mrb, motor, mrb_intern_lit(mrb, "@divisor"), divisor_val);
 
-	  pwm_control = *(pwm + PWM_CONTROL) ;		// preserve PWM_CONTROL
-	  *(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
-	  *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
+	pwm_control = *(pwm + PWM_CONTROL) ;		// preserve PWM_CONTROL
+	*(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
+	*(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
 //    delayMicroseconds (110) ;			// prevents clock going sloooow
-	  for(ra2=0;ra2<0x110000;ra2++) dummy(ra2);
+	for(ra2=0;ra2<0x110000;ra2++) dummy(ra2);
 
-	  while ((*(clk + PWMCLK_CNTL) & 0x80) != 0)	// Wait for clock to be !BUSY
-	//    delayMicroseconds (1) ;
-	  for(ra2=0;ra2<0x1000;ra2++) dummy(ra2);
-
-//	  *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (divisor << 12) ;
-	  *(clk + PWMCLK_DIV)  = 0x5A000000 | (75<<12);
-//	  *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Start PWM clock
-	  *(clk + PWMCLK_CNTL) = 0x5A000211;	// source=osc and enable clock
-	  *(pwm + PWM_CONTROL) = pwm_control ;		// restore PWM_CONTROL
+	while ((*(clk + PWMCLK_CNTL) & 0x80) != 0)	// Wait for clock to be !BUSY
+	// delay 1msec
+	for(ra2=0;ra2<0x1000;ra2++) dummy(ra2);
+	*(clk + PWMCLK_DIV)  = 0x5A000000 | (75<<12);
+	*(clk + PWMCLK_CNTL) = 0x5A000211;	// source=osc and enable clock
+	*(pwm + PWM_CONTROL) = pwm_control ;		// restore PWM_CONTROL
 }
 
 static mrb_value
@@ -212,19 +210,11 @@ mrb_rs_motor_stop(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
 {
-	int motor;
-
-	//mrb_int n1, n2;
 	mrb_int speed, rotation;
-	//int hval,lval,val;
-	//unsigned int high,low;
-
+	int motor;
 	int param = 50;
 
 	mrb_get_args(mrb, "i", &speed);
-	//rotation = mrb_fixnum_value(n1);
-	//speed = mrb_fixnum_value(n2);
-
     if (speed > 0) {
         rotation = FORWARD;
     } else {
@@ -234,7 +224,6 @@ mrb_rs_motor_drive(mrb_state *mrb, mrb_value self)
 
     mrb_value v = mrb_iv_get(mrb, self, mrb_intern_lit(mrb, "@pwm_no"));
 	motor = mrb_fixnum(v);
-
 	if(motor == L_MOTOR){
 		if(rotation == FORWARD){
 			PUT32(GPSET0,1<<16);
@@ -266,7 +255,6 @@ mrb_mruby_rs_motor_gem_init(mrb_state* mrb) {
 	mrb_define_const(mrb, motor, "BAL", mrb_fixnum_value(1));
 	mrb_define_const(mrb, motor, "FORWARD", mrb_fixnum_value(0));
 	mrb_define_const(mrb, motor, "REVERSE", mrb_fixnum_value(1));
-
 
 	/* methods */
 	mrb_define_method(mrb, motor, "initialize", mrb_rs_motor_initialize, MRB_ARGS_REQ(4));

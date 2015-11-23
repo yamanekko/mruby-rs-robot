@@ -14,9 +14,6 @@
 #define AUX_MU_STAT_REG 0x20215064	//Mini Uart Extra Status
 #define AUX_MU_BAUD_REG 0x20215068	//Mini Uart Baudrate
 
-/**
- * from https://github.com/dwelch67/raspberrypi.git
- */
 static void
 uart_putc(unsigned int c)
 {
@@ -54,11 +51,9 @@ mrb_rs_serial_initialize(mrb_state *mrb, mrb_value self)
     PUT32(GPPUDCLK0,(1<<14)|(1<<15));
     for(ra=0;ra<150;ra++) dummy(ra);
     PUT32(GPPUDCLK0,0);
-
     PUT32(AUX_MU_CNTL_REG,3);
 
-
-	  return self;
+	return self;
 }
 
 static mrb_value
@@ -87,11 +82,11 @@ mrb_rs_serial_write(mrb_state *mrb, mrb_value self)
     int idx = 0;
 
 	mrb_get_args(mrb, "s", &data, &data_len);
-
     for(idx = 0; idx < data_len ; idx++){
     	uart_putc(data[idx]);
     }
-	return self;
+
+    return self;
 }
 
 

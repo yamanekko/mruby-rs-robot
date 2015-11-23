@@ -1,6 +1,3 @@
-//#include "mruby.h"
-//#include "mruby/variable.h"
-
 #include "rs_robot.h"
 
 void mrb_mruby_rs_gyro_gem_init(mrb_state* mrb);
@@ -17,13 +14,11 @@ mrb_mruby_rs_robot_delay(mrb_state *mrb, mrb_value self)
 {	//int divisor
     unsigned int ra2;
 	uint32_t pwm_control;
-
     mrb_int wait;
 
     mrb_get_args(mrb, "i", &wait);	//TODO 引数の値は使用してない
-//    wait &= 4095;
-//    wait = wait * 1000;
     for(ra2=0;ra2<wait;ra2++) dummy(ra2);
+
     return self;
 }
 
