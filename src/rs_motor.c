@@ -112,7 +112,7 @@ mrb_rs_motor_pwm_SetClock(mrb_state *mrb, mrb_value self)
 
     mrb_int divisor;
 
-    mrb_get_args(mrb, "i", &divisor);	//TODO 引数の値は使用してない
+    mrb_get_args(mrb, "i", &divisor);	//TODO use this value
     divisor &= 4095;
     rs_motor_set_clock(mrb, divisor);
 
@@ -122,8 +122,8 @@ mrb_rs_motor_pwm_SetClock(mrb_state *mrb, mrb_value self)
 static mrb_value
 mrb_rs_motor_initialize(mrb_state *mrb, mrb_value self)
 {
-	// input1,input2 enableのペア(A:in1,in2,enableA B:in3,in4,enableB)
-	//gpioピン番号とPWM1と2のどちらを使うかをもらう
+	// input1, input2 and pair of enable (A:in1,in2,enableA B:in3,in4,enableB)
+	//gpio pin numbers and which is used in PWM1 or PWM2
 //	mrb_int input1, input2, enable,pwmNo;
     unsigned int ra;
 	unsigned int ra2;
@@ -145,7 +145,7 @@ mrb_rs_motor_initialize(mrb_state *mrb, mrb_value self)
 	pwmNo = mrb_fixnum_value(npwm);
 	mrb_iv_set(mrb, self, mrb_intern_lit(mrb, "@pwm_no"), pwmNo);
 
-	//とりえあずPWM0=GPIO12, PWM1=GPIO19のみサポート
+	//TODO only support when PWM0=GPIO12, PWM1=GPIO19
 //	switch (enable) {
 	switch (mrb_fixnum(enable)) {
 		case 12:
