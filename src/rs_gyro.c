@@ -60,7 +60,7 @@ unsigned int spi_read(unsigned int cmd) {
     *SPI_CONTROL |= SPI_CS_TA_ACTIVE;
     while(1)
     {
-    	//送信バッファに空きがあるかどうか
+    	// send buffer space available?
         if(GET32(AUX_SPI0_CS)&(1<<18)) break; //TXD
     }
 
@@ -72,21 +72,21 @@ unsigned int spi_read(unsigned int cmd) {
     while(1) if(GET32(AUX_SPI0_CS)&(1<<17)) break;
  //   for(ra2=0;ra2<0x50000;ra2++) dummy(ra2);
 
-    iret = *SPI_FIFO;	 // 読み捨て
+    iret = *SPI_FIFO;	 // read only; no use
     iret = *SPI_FIFO;
 
-    // 通信終了（ TA = 0 ）
+    // send done (TA = 0)
     *SPI_CONTROL &= ~SPI_CS_TA_ACTIVE ;
 
     return iret;
 }
 
 void spi_write(unsigned int reg, unsigned int val){
-	// TA =1 (start)
+	// TA = 1 (start)
 	*SPI_CONTROL |= SPI_CS_TA_ACTIVE;
     *SPI_FIFO = reg;
     *SPI_FIFO = val;
-    // 送信完了待ち wait for send done signal
+    // wait for sending done signal
     while(1) if(GET32(AUX_SPI0_CS)&(1<<16)) break;
     // TA = 0 (end)
     *SPI_CONTROL &= ~SPI_CS_TA_ACTIVE ;
@@ -97,7 +97,7 @@ void spi_write(unsigned int reg, unsigned int val){
 static mrb_value
 mrb_rs_gyro_initialize(mrb_state *mrb, mrb_value self)
 {
-	//TODO パラメータでデフォルト値を変更できるようにする
+	//TODO update default value with parameters
 	// gpio 7, 8, 9, 10, 11
 
     unsigned int ra;
@@ -114,7 +114,7 @@ mrb_rs_gyro_initialize(mrb_state *mrb, mrb_value self)
     //ra|=1<<27;    //output
     ra&=~(7<<24); //gpio8	//CE0
     ra|=4<<24;    //alt0
-    ra&=~(7<<21); //gpio7	//CE1 未使用
+    ra&=~(7<<21); //gpio7	//CE1; not used
     //ra|=4<<21;    //alt0
     ra|=1<<21;    //output
     PUT32(GPFSEL0,ra);
@@ -128,7 +128,7 @@ mrb_rs_gyro_initialize(mrb_state *mrb, mrb_value self)
     *SPI_CONTROL = 0;
 	*SPI_CONTROL &= ~(1 << SPI_CS_CSPOL0); //LOW
 	*SPI_CONTROL &= ~((1 << SPI_CS_CS0) | (1 << SPI_CS_CS1));//CS0
-	//送信バッファ、受信バッファクリア
+	// clear send/receive buffer
 	*SPI_CONTROL |= (1 << SPI_CS_CLEAR_RX) | (1 << SPI_CS_CLEAR_TX);
 	*SPI_CONTROL |= SPI_CS_MODE_00;
 
